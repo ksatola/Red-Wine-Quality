@@ -6,7 +6,7 @@ The [Wine Quality dataset](https://github.com/ksatola/Red-Wine-Quality/blob/mast
 
 An online version of the report can be found [here (ca. 15MB)](https://ksatola.github.io/EDA_RedWineQuality_Final.html).
 
-More information regarding the dataset, sources and usage can be found here: [wienQualityInfo.txt](https://github.com/ksatola/Red-Wine-Quality/blob/master/wineQualityInfo.txt)
+More information regarding the dataset, sources and usage can be found here: [wineQualityInfo.txt](https://github.com/ksatola/Red-Wine-Quality/blob/master/wineQualityInfo.txt)
 
 ## Results
 During EAD, four features: volatile.acidity, citric.acid, sulphates and alcohol were selected as showing most variation in sample distributions between low and high quality measures. The EDA results provide more specific information on the four features parameters corresponding to low and high red wine quality.  
