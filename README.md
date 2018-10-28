@@ -15,6 +15,7 @@ During EAD, four features: volatile.acidity, citric.acid, sulphates and alcohol 
 - Examination of central tendency and spread
 - Data visualization of univariate, bivariate and multivariate relationships
 - Correlation tests
+- Local polynomial regression fitting
 
 ## Tools
 - R, R Studio
