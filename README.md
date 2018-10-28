@@ -20,5 +20,5 @@ During EAD, four features: volatile.acidity, citric.acid, sulphates and alcohol 
 - R Markdown
 
 ## Details
-- [Exploratory Data Analysis of Red Wine Quality Dataset (HTML)](https://github.com/ksatola/Red-Wine-Quality/blob/master/EDA_RedWineQuality_Final.html)
+- [Exploratory Data Analysis of Red Wine Quality Dataset (HTML)](https://ksatola.github.io/EDA_RedWineQuality_Final.html)
 - [Exploratory Data Analysis of Red Wine Quality Dataset (RMD)](https://github.com/ksatola/Red-Wine-Quality/blob/master/EDA_RedWineQuality_Final.Rmd)
