@@ -4,6 +4,8 @@ The goal of this project is to perform multi-level exloratory data analysis (EDA
 ## Overview
 The [Wine Quality dataset](https://github.com/ksatola/Red-Wine-Quality/blob/master/wineQualityReds.csv) consists of red wine samples. The inputs include objective tests (e.g. pH values) and the output is based on sensory data (median of at least 3 evaluations made by wine experts). Each expert graded the wine quality between 0 (very bad) and 10 (very excellent).
 
+An online version of the report can be found [here (ca. 15MB)](https://ksatola.github.io/EDA_RedWineQuality_Final.html).
+
 More information regarding the dataset, sources and usage can be found here: [wienQualityInfo.txt](https://github.com/ksatola/Red-Wine-Quality/blob/master/wineQualityInfo.txt)
 
 ## Results
@@ -20,5 +22,6 @@ During EAD, four features: volatile.acidity, citric.acid, sulphates and alcohol 
 - R Markdown
 
 ## Details
-- [Exploratory Data Analysis of Red Wine Quality Dataset (HTML)](https://ksatola.github.io/EDA_RedWineQuality_Final.html)
+- [Exploratory Data Analysis of Red Wine Quality Dataset (online version)](https://ksatola.github.io/EDA_RedWineQuality_Final.html)
+- [Exploratory Data Analysis of Red Wine Quality Dataset (online version with R code)](https://ksatola.github.io/EDA_RedWineQuality_FinalwithCode.html)
 - [Exploratory Data Analysis of Red Wine Quality Dataset (RMD)](https://github.com/ksatola/Red-Wine-Quality/blob/master/EDA_RedWineQuality_Final.Rmd)
