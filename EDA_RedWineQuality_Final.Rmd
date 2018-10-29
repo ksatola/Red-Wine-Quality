@@ -2,7 +2,7 @@
 ---
 title: "Exploratory Data Analysis of Red Wine Quality Dataset"
 author: "Krzysztof Satola"
-date: "October 28th, 2018"
+date: "October 29th, 2018"
 output:
   html_document:
     toc: true
@@ -38,14 +38,12 @@ The dataset input variables (based on physicochemical tests) are:
 7. **total sulfur** dioxide (mg / dm^3)
 8. **density** (g / cm^3)
 9. **pH**
-10. **sulphates** (potassium sulphate - g / dm3)
+10. **sulphates** (potassium sulphate - g / dm^3)
 11. **alcohol** (% by volume)
    
 The output variable (based on sensory data) is:
 
 12. **quality** (score between 0 and 10)
-
-<a name="obj"/>
 
 ## EDA Objective
 
@@ -62,38 +60,49 @@ rw <- read.csv('wineQualityReds.csv', sep = ',', row.names = 1)
 Let's start with learning more about Red Wine dataset.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Find dimensions of rw dataframe
 dim(rw)
 ```
 There are 1599 observations and 12 variables in the dataset.
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# List rw dataframe's column names, types and a subset of values
 str(rw)
 ```
 There are only numerical values in the dataframe. Quality variable is the only one of integer type. All column names are consistent.
 
 The dataset variables summary can be found below:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Display summary statistics for each variable
 summary(rw)
 ```
 The values ranges of different variables vary significantly and may require normalization in later phases of the analysis.
 
 The data set is tidy and does not contain missing values:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Check how many missing values (NA) are in each column/variable, sum them up per column
 colSums(is.na(rw))
 ```
 
-## Univariate Exploration
+## Univariate and Bivariate Exploration
 
 The following histogram matrix depics distributions of all variables in the dataset.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Draw a histogram for a given dataframe and variable
+# Use deparse() and substitute() functions to decode column name from 
+# a variable passed as an argument to the function, to be displayed
+# on x axis (xlab())
 draw_hist <- function(dataframe, variable)
 {
+  # Save histogram definition to the plot variable
   plot <- ggplot(data = dataframe, aes(x = variable)) + 
            geom_histogram(color = 'black', fill = '#099DD9') +
            xlab(deparse(substitute(variable)))
   return(plot)
 }
 
+# Build a matrix of small histograms with 3 columns
+# using customly defined draw_hist() function
 grid.arrange(draw_hist(rw, rw$fixed.acidity),
              draw_hist(rw, rw$volatile.acidity),
              draw_hist(rw, rw$citric.acid),
@@ -116,14 +125,17 @@ The histograms reveal that **density** and **pH** are normally disributed but th
 #### quality
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x=quality)) +
-  geom_histogram(color = 'black', fill = '#099DD9', binwidth = 0.5) +
-  scale_x_continuous(limits = c(0,10), breaks = seq(0,10,1)) +
+# Plot a histogram of quality values
+ggplot(data = rw, aes(x = quality)) +
+  geom_histogram(color = 'black', fill = '#099DD9', binwidth = 1) +
+  # Used to show 0-10 range, even if there are no values close to 0 or 10
+  scale_x_continuous(limits = c(0, 10), breaks = seq(0, 10, 1)) +
   xlab('Quality of Red Wine') +
   ylab('Number of Red Wines')
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Display summary statistics for quality
 summary(rw$quality)
 ```
 
@@ -140,26 +152,32 @@ breaks <- c(0, 5, 7, 10)
 # Bucket data points into intervals
 rw$quality.category <- cut(rw$quality, breaks, include.lowest = TRUE, right = FALSE)
 
-# Check
+# Check intervals
 summary(rw$quality.category)
 
 # Add labels to intervals
 labels <- c("Low", "Medium", "High")
 rw$quality.category <- cut(rw$quality, breaks, include.lowest = TRUE, right = FALSE, labels=labels)
 
-# Check
+# Check if labels are applied properly
 table(rw$quality.category)
 
 # Draw the result
+# Combine rows by quality category
 y <- cbind(rw, rw$quality.category)
-ggplot(data=y, aes(x = y$quality.category, fill = ..count..)) + 
-  geom_bar(color='black', alpha=0.9) + 
+# Plot category bars and fill the colour based on number counted
+ggplot(data = y, aes(x = y$quality.category, fill = ..count..)) + 
+  geom_bar(color = 'black', alpha = 0.9) + 
+  # Add text labels with number of rows in each category
   stat_count(geom = "text", aes(label = ..count..), hjust = -0.1) +
   theme_bw() + 
   labs(y = "Number of Observations", x = "Red Wine Quality Category") +
+  # Make the plot horizontal
   coord_flip() +
+  # Limit y axis
   ylim(0, 2000) +
-  scale_x_discrete(drop = FALSE) # include the bins of length zero
+  # Include bins of length zero
+  scale_x_discrete(drop = FALSE) 
 ```
 
 The number of observations in each quality interval is not balanced with the rest. Most observations are in the Medium category (1319), 217 are in the High category and 63 in the Low category. The low number of observations in the Low and High categories may influence quality of our analysis.
@@ -185,10 +203,11 @@ Based on different views I will identify four biggest differentiators (based on 
 draw_hist(rw, rw$fixed.acidity)
 ```
 
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 summary(rw$fixed.acidity)
 ```
+
+The distribution of **fixed.acidity** data is lightly right skewed with minimum value of 4.60, maximum of 15.9 and median of 7.90 and mean of 8.32. Let's see how many observations fall in each quality category.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Split fixed.acidity by quality and summarize
@@ -199,25 +218,38 @@ by(rw$fixed.acidity, rw$quality.category, summary)
 # Histograms
 ggplot(data = rw, aes(x = fixed.acidity)) +
   geom_histogram(binwidth = 0.2, color = 'black', fill = '#099DD9') +
+  # Split data by category and display plots horizontally
   facet_wrap(~quality.category)
 ```
 
+The distribution shapes for low and high categories looks similar, but the high distribution tends to be moved to the right. This kind of a diagram cannot show precisely how far the means of low and high distributions are from each other.
+
+Let's compare the shapes of the quality category distributions using frequency polygons and density plots to see if we can reveal more.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Frequency polygons
+# For y calculate proportions within each quality category group
 ggplot(data = rw, aes(x = fixed.acidity, y = ..density../sum(..density..))) +
   geom_freqpoly(aes(color = quality.category), binwidth = 0.5)
 ```
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Density Plot
 ggplot(rw, aes(citric.acid)) +
   geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
+Having all distributions stacked on top of each other, we can more easily see the differences in their shape but is is still hard to reason about the means.
+
+Using box plots allows us to combine all required information in a visual way.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Box Plots
 ggplot(data = rw, aes(x = quality.category, y = fixed.acidity, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are not far from each other and their IQRs overlap (see also summary statistics per category above). The variability between low and high quality categories is moderate comparing to other variables and this feature will not be investigated later.
 
 #### volatile.acidity
 
@@ -229,30 +261,18 @@ draw_hist(rw, rw$volatile.acidity)
 summary(rw$volatile.acidity)
 ```
 
+The distribution of **volatile.acidity** data is almost normal with minimum value of 0.12, maximum of 1.58 and median of 0.52 and mean of 0.5278.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$volatile.acidity, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = volatile.acidity, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.05, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = volatile.acidity, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.1)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(volatile.acidity)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = volatile.acidity, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are far from each other and even their IQRs do not overlap (see also summary statistics per category above). The variability between low and high quality categories is high comparing to other variables and this feature will have to be investigated later.
 
 #### citric.acid
 
@@ -264,29 +284,18 @@ draw_hist(rw, rw$citric.acid)
 summary(rw$citric.acid)
 ```
 
+The distribution of **citric.acid** data is right skewed with minimum value of 0, maximum of 1 (outlayer) and median of 0.26 and mean of 0.271.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$citric.acid, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = citric.acid, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.05, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = citric.acid, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.05)
-```
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(citric.acid)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = citric.acid, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are very far from each other and their IQRs do not overlap (see also summary statistics per category above). The variability between low and high quality categories is high comparing to other variables and this feature will have to be investigated later.
 
 #### residual.sugar
 
@@ -298,30 +307,18 @@ draw_hist(rw, rw$residual.sugar)
 summary(rw$residual.sugar)
 ```
 
+The distribution of **residual.sugar** data is right skewed (long-tailed) with minimum value of 0.9, maximum of 15.5 (many outlayers) and median of 2.2 and mean of 2.539.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$residual.sugar, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = residual.sugar, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.5, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = residual.sugar, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.5)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(residual.sugar)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = residual.sugar, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are very close to each other and their IQRs overlap (see also summary statistics per category above). The variability between low and high quality categories is minimum comparing to other variables and this feature will not be investigated later.
 
 #### chlorides
 
@@ -333,30 +330,18 @@ draw_hist(rw, rw$chlorides)
 summary(rw$chlorides)
 ```
 
+The distribution of **chlorides** data is also right skewed (long-tailed) and very similar to distribution of **residual.sugar** with minimum value of 0.012, maximum of 0.611 (many outlayers) and median of 0.079 and mean of 0.087.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$chlorides, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = chlorides, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.03, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = chlorides, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.01)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(chlorides)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = chlorides, color = quality.category)) +
   geom_boxplot()
 ```
+
+Similarily to **residual.sugar**, the low and high means are very close to each other and their IQRs overlap (see also summary statistics per category above). The variability between low and high quality categories is minimum comparing to other variables and this feature will not be investigated later.
 
 #### free.sulfur.dioxide
 
@@ -368,30 +353,18 @@ draw_hist(rw, rw$free.sulfur.dioxide)
 summary(rw$free.sulfur.dioxide)
 ```
 
+The distribution of **free.sulfur.dioxide** data is right skewed with minimum value of 1, maximum of 72 and median of 14 and mean of 15.87.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$free.sulfur.dioxide, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = free.sulfur.dioxide, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 2, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = free.sulfur.dioxide, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 3)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(free.sulfur.dioxide)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = free.sulfur.dioxide, color = quality.category)) +
   geom_boxplot()
 ```
+
+Similarily to **residual.sugar** or **chlorides**, the low and high means are very close to each other and their IQRs overlap (see also summary statistics per category above), but in this case the data is much more dispersed. The variability between low and high quality categories is low comparing to other variables and this feature will not be investigated later.
 
 #### total.sulfur.dioxide
 
@@ -403,30 +376,18 @@ draw_hist(rw, rw$total.sulfur.dioxide)
 summary(rw$total.sulfur.dioxide)
 ```
 
+The distribution of **total.sulfur.dioxid** data is right skewed (long-tailed) and very similar to distribution of **free.sulfur.dioxide** with minimum value of 6, maximum of 289 (outlayers) and median of 38 and mean of 46.47.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$total.sulfur.dioxide, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = total.sulfur.dioxide, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 10, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = total.sulfur.dioxide, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 5) 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(total.sulfur.dioxide)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = total.sulfur.dioxide, color = quality.category)) +
   geom_boxplot()
 ```
+
+Similarily to **free.sulfur.dioxide**, the low and high means are very close to each other and their IQRs overlap (see also summary statistics per category above), but in this case the data is much less dispersed. The variability between low and high quality categories is low comparing to other variables and this feature will not be investigated later.
 
 #### density
 
@@ -438,30 +399,18 @@ draw_hist(rw, rw$density)
 summary(rw$density)
 ```
 
+The distribution of **density** data is normal with minimum value of 0.9901, maximum of 1.0037 and median of 0.9968 and mean of 0.9967.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$density, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = density, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.001, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = density, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.001) 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(density)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = density, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are close to each other and their IQRs overlap (see also summary statistics per category above). The variability between low and high quality categories is low comparing to other variables and this feature will not be investigated later.
 
 #### pH
 
@@ -473,30 +422,18 @@ draw_hist(rw, rw$pH)
 summary(rw$pH)
 ```
 
+The distribution of **pH** data is normal with minimum value of 2.740, maximum of 4.010 and median of 3.310 and mean of 3.311.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$pH, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = pH, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.05, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = pH, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.05) 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(pH)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = pH, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are not too close to each other but their IQRs overlap (see also summary statistics per category above). The variability between low and high quality categories is semi-low comparing to other variables and this feature will not be investigated later.
 
 #### sulphates
 
@@ -508,30 +445,18 @@ draw_hist(rw, rw$sulphates)
 summary(rw$sulphates)
 ```
 
+The distribution of **sulphates** data is right skewed (long-tailed) with minimum value of 0.33, maximum of 2 and median of 0.62 and mean of 0.6581.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$sulphates, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = sulphates, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.05, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = sulphates, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.05) 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(sulphates)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = quality.category, y = sulphates, color = quality.category)) +
   geom_boxplot()
 ```
+
+The low and high means are far from each other and their IQRs do not overlap (see also summary statistics per category above). The variability between low and high quality categories is high comparing to other variables and this feature will have to be investigated later.
 
 #### alcohol
 
@@ -543,24 +468,10 @@ draw_hist(rw, rw$alcohol)
 summary(rw$alcohol)
 ```
 
+The distribution of **alcohol** data is right skewed but does not have many outliers with minimum value of 8.4, maximum of 14.9 and median of 10.2 and mean of 10.42.
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 by(rw$alcohol, rw$quality.category, summary)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = alcohol, y = ..density../sum(..density..))) +
-  geom_histogram(binwidth = 0.5, color = 'black', fill = '#099DD9') +
-  facet_wrap(~quality.category)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = alcohol, y = ..density../sum(..density..))) +
-  geom_freqpoly(aes(color = quality.category), binwidth = 0.5) 
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw, aes(alcohol)) +
-  geom_density(aes(fill = factor(quality.category)), alpha = 0.8)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -568,7 +479,9 @@ ggplot(data = rw, aes(x = quality.category, y = alcohol, color = quality.categor
   geom_boxplot()
 ```
 
-### Univariate Exploration Summary
+The low and high means are very far from each other and their IQRs do overlap only slightly being very dispersed (see also summary statistics per category above). The variability between low and high quality categories is very high comparing to other variables and this feature will have to be investigated later.
+
+### Univariate and Bivariate Exploration Summary
 
 For every variable distribution and density differences were explored from different perspectives: numerical summary statistics, histograms, frequency polygons, density distributions and boxplots. The different perspectives complement each other giving most complete view on each variable and their variability related to red wine quality (biggest distribution difference for Low and High red wine quality categories).
 
@@ -579,19 +492,20 @@ draw_boxplot <- function(dataframe, variable, ylab)
 {
   plot <- ggplot(data = dataframe, aes(x = quality.category, y = variable, color = quality.category)) + 
     geom_boxplot() + 
-    xlab('quality') +
+    xlab('Quality') +
     #ylab(deparse(substitute(variable))) +
     ylab(ylab) +
     theme(legend.position = "none")
   return(plot)
 }
 
+# Build 4 boxplots summarizing distributions of 4 selected features
 draw_univ_summary <- function()
 {
-  grid.arrange(draw_boxplot(rw, rw$volatile.acidity, 'volatile.acidity'),
-             draw_boxplot(rw, rw$citric.acid, 'citric.acid'),
-             draw_boxplot(rw, rw$sulphates, 'sulphates'),
-             draw_boxplot(rw, rw$alcohol, 'alcohol'),
+  grid.arrange(draw_boxplot(rw, rw$volatile.acidity, expression(Volatile~Acidity~(g/dm^{3}))),
+             draw_boxplot(rw, rw$citric.acid, expression(Citric~Acid~(g/dm^{3}))),
+             draw_boxplot(rw, rw$sulphates, expression(Sulphates~(g/dm^{3}))),
+             draw_boxplot(rw, rw$alcohol, 'Alcohol (% by Volume)'),
              ncol = 4,
              top = 'Features With Biggest Variability by Quality Category')
 }
@@ -599,12 +513,15 @@ draw_univ_summary <- function()
 draw_univ_summary()
 ```
 
-## Bivariate Exploration
+## Bivariate and Multivariate Exploration
 
 Just for curiosity, let's see what variables are correlated with each other (if any).
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Create a new dataframe and calculate correlations 
+# between rw variables
 rwcor <- cor(rw[c(1:11, 12)])
+# Draw a correlation matrix
 corrplot(rwcor, method = 'square', order = "hclust", 
          tl.col = "black", tl.cex = 0.8, tl.offset = 1)
 ```
@@ -616,14 +533,15 @@ Next, I will focus on negative correlation between **volatile.acidity** and **ci
 Let's start with a closer look at how the four features selected for the next round of analysis relate to each other and to **quality**.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Create a dataframe with only selected variables
 rw_sample = subset(rw, select = c(volatile.acidity, citric.acid, sulphates, alcohol, quality))
  
-ggpairs(rw_sample, wrap = list(size = 4), 
-        lower = list(continuous = wrap('points', shape = I('.'))), 
-        upper = list(combo = wrap('box', outlier.shape = I('.')))) +
-  theme(legend.position = "none", 
-        panel.grid.major = element_blank(),
-        axis.ticks = element_blank(), 
+# Draw a correlation matrix
+ggpairs(rw_sample, 
+        # Define how scatterplots should be displayed
+        lower = list(continuous = wrap('points', shape = I('.')))) +
+  theme(legend.position = "none", # do not show legend
+        panel.grid.major = element_blank(), # do not display grid
         panel.border = element_rect(linetype = "dashed", colour = "black", fill = NA))
 ```
 
@@ -640,11 +558,6 @@ Let's look deeper into **quality** versus selected features to see how they infl
 ### volatile.acidity & quality
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = volatile.acidity, y = quality, color = quality.category)) +
-  geom_point(alpha = 1/3)
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
 cor.test(rw$volatile.acidity,rw$quality)
 ```
 
@@ -653,38 +566,37 @@ The negative correlation between **volatile.acidity** and **quality** is weak-to
 How does the average **volatile.acidity** varies with quality?
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Calculate means, medians and number of observations per existing
+# in rw quality levels, sort ascending by quality 
 rw.volatile_acidity_by_quality <- rw %>%
   group_by(quality) %>%
   summarize(volatile_acidity_mean = mean(volatile.acidity),
             volatile_acidity_median = median(volatile.acidity),
             number_of_obs = n()) %>%
   arrange(quality)
+
+# Show the result
 head(rw.volatile_acidity_by_quality)
 ``` 
 
-Looking at the average mean and median values of **volatile.acidity** per each quality rating, we can see that there is a clear pattern showing that the less **volatile.acidity** is in a sample on average the better quality of the sample is. The plots below confirm this visually.
+Looking at the average mean and median values of **volatile.acidity** per each quality rating, we can see that there is a clear pattern showing that the less **volatile.acidity** is in a sample on average the better quality of the sample is. The plot below confirms this visually.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = volatile.acidity, y = quality.category)) + 
-  geom_point(aes(color = quality.category), alpha = 1/4, position = 'jitter') +
-  ggtitle('Volatile.acidity and Quality Relationship')
-```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw.volatile_acidity_by_quality) + 
+ggplot(rw.volatile_acidity_by_quality)  +
+  # Jitter data points for better visibility and add depth with alpha
+  geom_jitter(data = rw, aes(x = volatile.acidity, y = quality,
+                      color = quality.category), width = 0, alpha = 0.5) + 
+  # Put calculated earlier means/medians (line plots on top)
   geom_line(aes(x = volatile_acidity_mean, y = quality), color = "blue") +
   geom_line(aes(x = volatile_acidity_median, y = quality), color = "red") +
+  # Set labels and title
   xlab("Volatile Acidity Mean (blue) and Median (red)") +
   ylab("Red Wine Quality Level") +
   ggtitle("Volatile Acidity Mean and Median by Quality")
 ```
 
 ### citric.acid & quality
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = citric.acid, y = quality, color = quality.category)) +
-  geom_point(alpha = 1/3)
-```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 cor.test(rw$citric.acid,rw$quality)
@@ -702,16 +614,12 @@ rw.citric_acid_by_quality <- rw %>%
 head(rw.citric_acid_by_quality)
 ```
 
-Looking at the average mean and median values of **citric.acid** per each quality rating, we can see a pattern showing that the bigger **citric.acid** level is in a sample on average the better quality of the sample is. Furthermore, as clearly shown on plots below, the samples with **citric.acid** level above 0.5 will almost always be classsified as of Medium or High quality.
+Looking at the average mean and median values of **citric.acid** per each quality rating, we can see a pattern showing that the bigger **citric.acid** level is in a sample on average the better quality of the sample is. Furthermore, as clearly shown on the plot below, the samples with **citric.acid** level above 0.5 will almost always be classsified as of Medium or High quality.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = citric.acid, y = quality.category)) + 
-  geom_point(aes(color = quality.category), alpha = 1/4, position = 'jitter') +
-  ggtitle('Citric.acid and Quality Relationship')
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw.citric_acid_by_quality) + 
+ggplot(rw.citric_acid_by_quality)  +
+  geom_jitter(data = rw, aes(x = citric.acid, y = quality,
+              color = quality.category), width = 0, alpha = 0.5) + 
   geom_line(aes(x = citric_acid_mean, y = quality), color = "blue") +
   geom_line(aes(x = citric_acid_median, y = quality), color = "red") +
   xlab("Citric Acid Mean (blue) and Median (red)") +
@@ -720,11 +628,6 @@ ggplot(rw.citric_acid_by_quality) +
 ```
 
 ### sulphates & quality
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = sulphates, y = quality, color = quality.category)) +
-  geom_point(alpha = 1/3)
-```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 cor.test(rw$sulphates,rw$quality)
@@ -745,13 +648,9 @@ head(rw.sulphates_by_quality)
 Looking at the average mean and median values of **sulphates** per each quality rating, we can see that the bigger **sulphates** level is in a sample on average the better quality of the sample is. However, the **sulphates** values are less spread than values of other variables.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = sulphates, y = quality.category)) + 
-  geom_point(aes(color = quality.category), alpha = 1/4, position = 'jitter') +
-  ggtitle('Sulphates and Quality Relationship')
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw.sulphates_by_quality) + 
+ggplot(rw.sulphates_by_quality)  +
+  geom_jitter(data = rw, aes(x = sulphates, y = quality,
+              color = quality.category), width = 0, alpha = 0.5) + 
   geom_line(aes(x = sulphates_mean, y = quality), color = "blue") +
   geom_line(aes(x = sulphates_median, y = quality), color = "red") +
   xlab("Sulphates Mean (blue) and Median (red)") +
@@ -760,11 +659,6 @@ ggplot(rw.sulphates_by_quality) +
 ```
 
 ### alcohol & quality
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = alcohol, y = quality, color = quality.category)) +
-  geom_point(alpha = 1/3)
-```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 cor.test(rw$alcohol,rw$quality)
@@ -785,13 +679,9 @@ head(rw.alcohol_by_quality)
 Looking at the average mean and median values of **alcohol** per each quality rating, we can see a pattern showing that only **alcohol** level above 12 gives more certainty that the sample will be considered as of Medium or High quality. If the **alcohol** level goes below 10 a sample will most likely be considered as of a Medium or Low quality.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(data = rw, aes(x = alcohol, y = quality.category)) + 
-  geom_point(aes(color = quality.category), alpha = 1/4, position = 'jitter') +
-  ggtitle('Alcohol and Quality Relationship')
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-ggplot(rw.alcohol_by_quality) + 
+ggplot(rw.alcohol_by_quality)  +
+  geom_jitter(data = rw, aes(x = alcohol, y = quality,
+              color = quality.category), width = 0, alpha = 0.5) + 
   geom_line(aes(x = alcohol_mean, y = quality), color = "blue") +
   geom_line(aes(x = alcohol_median, y = quality), color = "red") +
   xlab("Alcohol Mean (blue) and Median (red)") +
@@ -799,9 +689,7 @@ ggplot(rw.alcohol_by_quality) +
   ggtitle("Alcohol Mean and Median by Quality")
 ```
 
-### Bivariate Exploration Summary
-
-In this phase of EDA I have confirmed the following:
+So far, in this phase of EDA I have confirmed the following:
 
 * Less **volatile.acidity** in a sample results in higher wine quality,
 * The bigger **citric.acid** level is in a sample on average the better quality of the sample is. The samples with **citric.acid** level above 0.5 will almost never be classsified as of Low quality,
@@ -817,25 +705,23 @@ draw_main_quality_corrs <- function(dataframe, variable, title)
     geom_point(aes(color = quality.category), alpha = 1/4, position = 'jitter') +
     ggtitle(title) +
     xlab('') +
-    ylab('quality') +
+    ylab('Quality') +
     theme(legend.position = "none")
   return(plot)
 }
 
 draw_biv_summary <- function()
 {
-  grid.arrange(draw_main_quality_corrs(rw, rw$volatile.acidity, 'volatile.acidity'),
-             draw_main_quality_corrs(rw, rw$citric.acid, 'citric.acid'),
-             draw_main_quality_corrs(rw, rw$sulphates, 'sulphates'),
-             draw_main_quality_corrs(rw, rw$alcohol, 'alcohol'),
+  grid.arrange(draw_main_quality_corrs(rw, rw$volatile.acidity, expression(Volatile~Acidity~(g/dm^{3}))),
+             draw_main_quality_corrs(rw, rw$citric.acid, expression(Citric~Acid~(g/dm^{3}))),
+             draw_main_quality_corrs(rw, rw$sulphates, expression(Sulphates~(g/dm^{3}))),
+             draw_main_quality_corrs(rw, rw$alcohol, 'Alcohol (% by Volume)'),
              ncol = 2,
              top = 'Quality and Features Correlation by Category')
 }
 
 draw_biv_summary()
 ```
-
-## Multivariate Exploration
 
 The last thing to check is the relation between **volatile.acidity**, **alcohol** and **quality**.
 
@@ -844,8 +730,10 @@ The last thing to check is the relation between **volatile.acidity**, **alcohol*
 A scatterplot with local polynomial regression fitting line should smoth the plot.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Plot a scatter plot
 ggplot(data = rw, aes(x = volatile.acidity, y = alcohol, color = quality.category)) + 
   geom_point(alpha = 0.6) +
+  # Use local polynomial regression fitting line
   geom_smooth(method="loess", col="firebrick", size=1)
 ```
 
@@ -853,9 +741,11 @@ ggplot(data = rw, aes(x = volatile.acidity, y = alcohol, color = quality.categor
 draw_muv_summary <- function()
 {
   ggplot(data = rw, aes(x = volatile.acidity, y = alcohol)) + 
-    geom_jitter(aes(color = quality.category, bg = quality.category), alpha = 1/2, pch = 21, cex = 4) +
+    geom_jitter(aes(color = quality.category, bg = quality.category), alpha = 1/2, pch = 21, cex = 2) +
     facet_wrap(~quality.category) +
     scale_color_brewer(type = 'div') +
+    xlab(expression(Volatile~Acidity~(g/dm^{3}))) + 
+    ylab("Alcohol (% by Volume)") +
     ggtitle('Volatile.acidity and Alcohol by Quality Category')
 }
 
@@ -864,7 +754,7 @@ draw_muv_summary()
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot(data = rw, aes(x = volatile.acidity, y = alcohol)) + 
-  geom_jitter(aes(color = quality.category, bg = quality.category), alpha = 1/2, pch = 21, cex = 4) +
+  geom_jitter(aes(color = quality.category, bg = quality.category), alpha = 1/2, pch = 21, cex = 2) +
   facet_wrap(~quality) +
   scale_color_brewer(type = 'div') +
   ggtitle('Volatile.acidity and Alcohol Relationship by Quality Level')
